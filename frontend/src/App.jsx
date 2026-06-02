@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router';
 import Panel from './components/Panel.jsx';
-import Header from './components/Header.jsx';
+import Sidebar from './components/Sidebar.jsx';
 import Login from './components/Login.jsx';
 
 const App = () => {
@@ -9,7 +9,7 @@ const App = () => {
     <>
       <Routes>
         <Route path='/' element={<Login/>} />
-        <Route element={<Header/>}>
+        <Route element={<Sidebar/>}>
           {/* <Route path='/' element={<Login/>} /> */}
           <Route path='/panel' element={<Panel/>} />
         </Route>
