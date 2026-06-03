@@ -8,3 +8,19 @@ body, html {
   height: 100%;
   background-color: rgba(165, 165, 165, 0.37);
 }
+
+.boton-accion {
+  background-color: rgb(255, 87, 87) !important;
+  height: 40px;
+  width: auto !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.btn.boton-accion:hover  {
+  background-color: rgb(252, 128, 128) !important;
+}
+
+.btn.boton-accion:active {
+  background-color: rgb(255, 87, 87) !important;
+}
