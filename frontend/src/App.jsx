@@ -7,6 +7,7 @@ import Sueldos from './components/herramientas/Sueldos.jsx';
 import Caja from './components/herramientas/Caja.jsx';
 import Usuarios from './components/herramientas/Usuarios.jsx';
 import Agenda from './components/herramientas/Agenda.jsx';
+import Pacientes from './components/herramientas/Pacientes.jsx';
 
 const App = () => {
 
@@ -20,6 +21,7 @@ const App = () => {
           <Route path='/sueldos' element={<Sueldos/>} />
           <Route path='/caja' element={<Caja/>} />
           <Route path='/usuarios' element={<Usuarios/>} />
+          <Route path='/pacientes' element={<Pacientes/>} />
           <Route path='/agenda' element={<Agenda/>} />
           <Route path='/mi-perfil' element={<Perfil/>} />
         </Route>

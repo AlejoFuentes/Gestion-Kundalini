@@ -6,9 +6,10 @@ const Sidebar = () => {
     const menuItems = [
         { nombre: 'Prestaciones', icono: 'bi-truck', url: '/prestaciones' },
         { nombre: 'Sueldos', icono: 'bi-wallet2', url: '/sueldos' },
-        { nombre: 'Caja', icono: 'bi-cash-coin', url: '/caja' },
+        { nombre: 'Pacientes', icono: 'bi-people', url: '/pacientes' },
         { nombre: 'Usuarios', icono: 'bi-people', url: '/usuarios' },
-        { nombre: 'Agenda', icono: 'bi-calendar-event', url: '/agenda' }
+        { nombre: 'Caja', icono: 'bi-cash-coin', url: '/caja' },
+        { nombre: 'Agenda', icono: 'bi-calendar-event', url: '/agenda' },
     ];
     
     return (
