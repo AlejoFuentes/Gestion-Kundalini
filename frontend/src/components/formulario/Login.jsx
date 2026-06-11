@@ -14,7 +14,7 @@ const Login = () => {
         <div className='h-100 d-flex justify-content-center align-items-center'>
             <div className='contenedor-login'>
                 <img className='h-100 col-5 ms-5' src="/images/imagen-login.svg"/>
-                <div className='col-7 d-flex flex-column align-items-center mt-5'>
+                <div className='col-7 d-flex flex-column align-items-center mt-5 h-100'>
                     <img className='logo-kundalini-login' src="//dcdn-us.mitiendanube.com/stores/002/707/544/themes/common/logo-535793582-1673018359-03b6bc19926ac505cabb1c4e27914dbf1673018360-480-0.png?0"/>
                     <h1 className='fw-bold mb-4'>¡Bienvenido!</h1>
                     <h5>Ingresá tus datos para acceder</h5>

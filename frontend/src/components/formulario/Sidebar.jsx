@@ -24,7 +24,7 @@ const Sidebar = () => {
                                 <NavLink 
                                     to={item.url} 
                                     key={index} 
-                                    className='btn boton-sidebar mb-2'
+                                    className='btn boton-selector mb-2'
                                 >
                                     <i className={`bi ${item.icono} fs-4 me-2`}></i>
                                     {item.nombre}
@@ -33,14 +33,14 @@ const Sidebar = () => {
                         </div>
                         <div className='contenedor-botones-inferiores'>
                             <NavLink 
-                                className='btn boton-sidebar'
+                                className='btn boton-selector'
                                 to={'/mi-perfil'}
                             >
                                 <i className='bi bi-person-circle fs-3 me-2'></i>
                                 Mi Perfil
                             </NavLink>
                             <NavLink 
-                                className='btn boton-sidebar'
+                                className='btn boton-selector'
                                 to={'/'}
                             >
                                 <i className='bi bi-box-arrow-right fs-3 me-2'></i>

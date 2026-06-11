@@ -44,3 +44,31 @@
 .boton-recuperacion:hover {
     color: rgb(253, 91, 91) !important;
 }
+
+@media (max-height: 768px) {
+    .contenedor-input {
+        height: 40px !important;
+    }
+    .btn.boton-accion {
+        height: 40px !important;
+    }
+
+}
+@media (max-height: 668px) {
+    .contenedor-input {
+        height: 30px !important;
+    }
+    .btn.boton-accion {
+        height: 30px !important;
+    }
+
+}
+@media (max-width: 1024px) {
+    .contenedor-input {
+        height: 30px !important;
+    }
+    .btn.boton-accion {
+        height: 30px !important;
+    }
+
+}

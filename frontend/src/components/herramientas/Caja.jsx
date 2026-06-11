@@ -1,5 +1,5 @@
 import './Caja.css'
-import { obtenerMovimientos } from '../../apis';
+import { obtenerMovimientos } from '../../services/apis';
 import { useEffect } from 'react';
 import { useState } from 'react';
 

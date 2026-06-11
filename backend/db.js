@@ -3,6 +3,10 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
+pg.types.setTypeParser(1082, function(stringValue) {
+    return stringValue; 
+});
+
 const pool = new Pool({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,

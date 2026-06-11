@@ -1,0 +1,99 @@
+.container-prestaciones {
+    width: 100%;
+    
+    .nav.nav-tabs {
+        background-color: #cccccc00;
+        border-bottom:1px solid rgba(255, 126, 126, 0.685);
+    }
+    
+    .nav-item {
+        gap: 0px !important;
+    }
+
+    .boton-selector {
+        width: auto;
+        margin: 0px;
+        border-bottom: none !important;
+        color:#DC3545 !important;
+    }
+
+    .boton-selector:active, .boton-selector:hover, .boton-selector:focus {
+        border-bottom: none !important;
+        
+    }
+    
+    .boton-selector:hover {
+        border: 1px solid #ffe5e5 !important;
+        border-bottom: none !important;
+    }
+
+    .boton-selector:focus, .boton-selector.active {
+        border: 1px solid #ff7e7e !important; 
+        border-bottom: none !important;
+    }
+    
+    .list-group-item {
+        border: 1px solid #CCCCCC;
+    }
+
+    .filtro-prestacion {
+        background-color: white;
+        padding: 6px;
+        border: 1px solid #CCCCCC;
+        border-radius: 8px;
+    }
+
+    .dropdown-filtro {
+        border: none;
+        padding-bottom: 1px;
+        background-color: transparent;
+    }
+
+    .dropdown-filtro:focus {
+        box-shadow: none !important;
+    }
+
+    .input-filtro {
+        border: none;
+        padding-block: 0px;
+        outline: none; 
+        background-color: transparent;  
+    }
+
+    input[type="date"].input-filtro {
+        width: 105px !important; 
+    }
+    
+    select.input-filtro {
+        padding-right: 25px !important; 
+    }
+
+    @media (max-width: 1400px) {
+        .filtro-prestacion {
+            font-size: 11px !important; /* Achica los textos fijos como "Fecha desde:" */
+            padding: 4px 8px; /* Achica un poco el relleno de la cajita blanca */
+        }
+
+        .input-filtro {
+            font-size: 12px !important; /* Achica los números de la fecha y las opciones del dropdown */
+        }
+
+        input[type="date"].input-filtro {
+            width: 100px !important; /* Achicamos un poco el ancho fijo del calendario para que no sobre espacio */
+        }
+    }
+    @media (max-width: 1100px) {
+        .filtro-prestacion {
+            font-size: 10px !important; /* Achica los textos fijos como "Fecha desde:" */
+            padding: 4px 8px; /* Achica un poco el relleno de la cajita blanca */
+        }
+
+        .input-filtro {
+            font-size: 10px !important; /* Achica los números de la fecha y las opciones del dropdown */
+        }
+
+        input[type="date"].input-filtro {
+            width: 100px !important; /* Achicamos un poco el ancho fijo del calendario para que no sobre espacio */
+        }
+    }
+}

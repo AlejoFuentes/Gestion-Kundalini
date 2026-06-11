@@ -1,6 +1,6 @@
 .conteneder-sidebar {
     height: 100%;
-    width: 300px;
+    width: 15%;
     background-color: rgba(255, 255, 255, 0.836);
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.25);
 }
@@ -14,7 +14,7 @@
 
 .logo-kundalini-sidebar {
     width: 70%;
-    height: 160px;
+    height: 100%;
 }
 
 .contenedor-botones-sidebar {
@@ -37,33 +37,31 @@
     flex-direction: column;
 }
 
-.boton-sidebar {
-    width: 75%;
-    display: flex !important;
-    justify-content: start !important;
-    align-items: center;
-    margin-left: 24px;
+@media (max-width: 1366px) {
+    .conteneder-logo-sidebar {
+        height: 15% !important;
+    }
+    .contenedor-botones-sidebar {
+        height: 85%;
+    }
 }
-
-.boton-sidebar.active {
-    background-color: #ffe5e5 !important; 
-    color: #dc3545 !important; 
-    font-weight: 600 !important;
-    border: 1px solid transparent;
-
+@media (max-width: 1024px) {
+    .boton-selector {
+        margin-left: 15px;
+    }
 }
-
-.boton-sidebar.active i {
-    color: #dc3545 !important;
+@media (max-height: 800px) {
+    .conteneder-sidebar {
+        width: 13%;
+    }
 }
-
-.boton-sidebar:hover {
-    background-color: #ffe5e5 !important; 
-    color: #dc3545 !important;
-    
+@media (max-height: 700px) {
+    .conteneder-sidebar {
+        width: 12%;
+    }
 }
-
-.boton-sidebar:focus {
-    border: 1px solid #ff7e7e !important; 
-    color: #dc3545 !important;
+@media (max-height: 600px) {
+    .conteneder-sidebar {
+        width: 11.5%;
+    }
 }
