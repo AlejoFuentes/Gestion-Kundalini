@@ -45,30 +45,69 @@
     color: rgb(253, 91, 91) !important;
 }
 
-@media (max-height: 768px) {
-    .contenedor-input {
-        height: 40px !important;
-    }
-    .btn.boton-accion {
-        height: 40px !important;
-    }
-
-}
-@media (max-height: 668px) {
-    .contenedor-input {
-        height: 30px !important;
-    }
-    .btn.boton-accion {
-        height: 30px !important;
-    }
-
-}
 @media (max-width: 1024px) {
-    .contenedor-input {
-        height: 30px !important;
+    @media (max-height: 768px) {
+        .contenedor-input {
+            height: 40px !important;
+        }
+        .input-formulario {
+            height: 38px !important;
+        }
+        .btn.boton-accion {
+            height: 40px !important;
+        }
+    
     }
-    .btn.boton-accion {
-        height: 30px !important;
+    @media (max-height: 868px) {
+        .contenedor-input {
+            height: 30px !important;
+        }
+        .input-formulario {
+            height: 28px !important;
+        }
+        .btn.boton-accion {
+            height: 30px !important;
+        }
+    
+    }
+
+}
+@media (max-width: 1366px) {
+    @media (max-height: 768px) {
+        .contenedor-input {
+            height: 35px !important;
+        }
+        .input-formulario {
+            height: 33px !important;
+        }
+        .btn.boton-accion {
+            height: 35px !important;
+        }
+    
+    }
+    @media (max-height: 668px) {
+        .contenedor-input {
+            height: 30px !important;
+        }
+        .input-formulario {
+            height: 28px !important;
+        }
+        .btn.boton-accion {
+            height: 30px !important;
+        }
+    
+    }
+    @media (max-height: 580px) {
+        .contenedor-input {
+            height: 25px !important;
+        }
+        .input-formulario {
+            height: 23px !important;
+        }
+        .btn.boton-accion {
+            height: 25px !important;
+        }
+    
     }
 
 }
