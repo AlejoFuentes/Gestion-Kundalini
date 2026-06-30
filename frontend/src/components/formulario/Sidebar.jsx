@@ -7,7 +7,7 @@ const Sidebar = () => {
         { nombre: 'Prestaciones', icono: 'bi-truck', url: '/prestaciones' },
         { nombre: 'Sueldos', icono: 'bi-wallet2', url: '/sueldos' },
         { nombre: 'Pacientes', icono: 'bi-people', url: '/pacientes' },
-        { nombre: 'Usuarios', icono: 'bi-people', url: '/usuarios' },
+        { nombre: 'Usuarios', icono: 'bi-person', url: '/usuarios' },
         { nombre: 'Caja', icono: 'bi-cash-coin', url: '/caja' },
         { nombre: 'Agenda', icono: 'bi-calendar-event', url: '/agenda' },
     ];
