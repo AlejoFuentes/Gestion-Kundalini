@@ -1,7 +1,7 @@
 import './Prestaciones.css'
 import { useState, useEffect } from 'react'
-import { obtenerPrestaciones, prestacionEdit } from '../../services/apis';
-import { formatearFecha, formatearMoneda } from '../../services/utils';
+import { obtenerPrestaciones, prestacionEdit, crearPrestacion, eliminarPrestacion, obtenerPacientes } from '../../services/apis';
+import { formatearFecha, formatearMoneda, formatearHorario } from '../../services/utils';
 
 const Prestaciones = () => {
     
@@ -13,13 +13,30 @@ const Prestaciones = () => {
     const [prestacionActual, setPrestacionActual] = useState('');
 
     const [loading, setLoading] = useState(true);
+
+    
+    const [pacientes, setPacientes] = useState([]);
+    const [busquedaPaciente, setBusquedaPaciente] = useState('');
+    const [pacienteSeleccionado, setPacienteSeleccionado] = useState(null);
+    
+    const pacientesParaDropdown = pacientes.filter(p => 
+        `${p.nombre} ${p.apellido}`.toLowerCase().includes(busquedaPaciente.toLowerCase())
+    );
+
+    const [nuevoPrestador, setNuevoPrestador] = useState('');
+    const [nuevaEspecialidad, setNuevaEspecialidad] = useState('');
     
         useEffect (() => {
             setLoading(true);
-            obtenerPrestaciones().then(res => {
-                setPrestaciones(res);
+                
+            Promise.all([
+                obtenerPrestaciones(),
+                obtenerPacientes()
+            ]).then(([resPrestaciones, resPacientes]) => {
+                setPrestaciones(resPrestaciones);
+                setPacientes(resPacientes); 
                 setLoading(false);
-            })
+            });
         },[]);
     
     const accionesBotones = [
@@ -57,6 +74,59 @@ const Prestaciones = () => {
 
     const prestadoresUnicos = ['Todos', ...new Set(prestaciones?.map(p => p.prestador))];
 
+    const guardarNuevaPrestacion = () => {
+        const form = document.getElementById('formCrearPrestacion');
+        
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        if (!pacienteSeleccionado) {
+            alert("Por favor, seleccioná un paciente de la lista.");
+            return;
+        }
+
+        const formData = new FormData(form);
+        const datosForm = Object.fromEntries(formData.entries());
+
+        const camposPrincipales = [
+            'paciente_id', 'prestador', 'especialidad', 'fecha_inicio', 'fecha_fin',
+            'cantidad', 'valor', 'total', 'frecuencia', 'horario', 'estado', 'pagado', 'observaciones'
+        ];
+
+        let detalles_extras = {};
+        let datosAEnviar = {};
+
+        Object.keys(datosForm).forEach(key => {
+            if (camposPrincipales.includes(key)) {
+                datosAEnviar[key] = datosForm[key];
+            } else {
+                if (datosForm[key] !== '') {
+                    detalles_extras[key] = datosForm[key];
+                }
+            }
+        });
+
+        datosAEnviar.detalles_extras = detalles_extras;
+
+        crearPrestacion(datosAEnviar)
+            .then(() => {
+                obtenerPrestaciones().then(res => setPrestaciones(res));
+
+                document.querySelector('#modalCrearPrestacion .btn-close').click();
+
+                form.reset();
+                setNuevoPrestador('');
+                setNuevaEspecialidad('');
+                setPacienteSeleccionado(null);
+                setBusquedaPaciente('');
+            })
+            .catch(error => {
+                alert("Hubo un error al crear la prestación. Revisá la consola.");
+            });
+    }
+
     const editarPrestacion = () => {
         if (!prestacionActual) return;
 
@@ -90,7 +160,18 @@ const Prestaciones = () => {
     }
 
     const handleEliminarPrestacion = () => {
-        console.log("Prestacion eliminada: " + prestacionActual.id);
+        if (!prestacionActual) return;
+
+        eliminarPrestacion(prestacionActual.id)
+            .then(() => {
+                obtenerPrestaciones().then(res => setPrestaciones(res));
+
+                document.querySelector('#modalEliminarPrestacion .btn-close').click();
+                setPrestacionActual(null);
+            })
+            .catch(error => {
+                alert("Hubo un error al eliminar la prestación. Revisá la consola.");
+            });
     }
 
     const filtroPrestador = (prestacion) => {
@@ -135,7 +216,10 @@ const Prestaciones = () => {
                 ))}
             </ul>
             {/* <-- TODOS LOS FILTROS --> */}
-            <div className='container-fluid my-3 px-4 d-flex align-items-center gap-2'>
+            <div className='container-fluid my-3 px-4 d-flex align-items-center justify-content-between gap-2'>
+                <div className='d-flex align-items-center gap-2'>
+                    
+                
                 <strong className="filtro-prestacion shadow" style={{ fontSize: "14px"}}>Fecha desde:&nbsp; 
                     <input 
                         className='input-filtro'
@@ -152,7 +236,7 @@ const Prestaciones = () => {
                         onChange={(e) => setFechaHasta(e.target.value)} 
                     />
                 </strong>
-                <strong className="filtro-prestacion d-flex align-items-center shadow" style={{ fontSize: "14px"}}>Estado:&nbsp; 
+                <strong className="filtro-prestacion d-flex align-items-center shadow" style={{ fontSize: "14px"}}>Deuda: 
                     <select 
                         className="dropdown-filtro form-select form-select-sm" 
                         value={estado} 
@@ -164,6 +248,10 @@ const Prestaciones = () => {
                         <option value="Impagas">Impagas</option>
                     </select>
                 </strong>
+                </div>
+                <div className='btn boton-accion align-items-center d-flex gap-1' data-bs-toggle="modal" data-bs-target="#modalCrearPrestacion">
+                    <i className="bi bi-plus-circle me-1"></i> Crear nueva prestación 
+                </div>
             </div>
 
             {/* <-- LISTA --> */}
@@ -182,6 +270,9 @@ const Prestaciones = () => {
                         <strong className='d-block'>Id Prestación: <span className="fw-normal">{p.id}</span></strong>
                         <strong className='d-block'>Fecha Inicio: <span className="fw-normal">{formatearFecha(p.fecha_inicio)}</span></strong>
                         <strong className='d-block'>Fecha Fin: <span className="fw-normal">{p.fecha_fin? formatearFecha(p.fecha_fin) : "- -"}</span></strong>
+                        {p.horario && (
+                            <strong className='d-block'>Horario: <span className="fw-normal">{formatearHorario(p.horario)}</span></strong>
+                        )}
                         <strong className='d-block'>Especialidad: <span className="fw-normal">{p.especialidad}</span></strong>
                         {p.detalles_extras?.movil && (
                         <strong className='d-block'>Móvil asignado: <span className="fw-normal">{p.detalles_extras.movil}</span></strong>
@@ -207,7 +298,8 @@ const Prestaciones = () => {
                         <strong className='d-block'>Frecuencia: <span className="fw-normal">{p.frecuencia}</span></strong>
                         <strong className='d-block'>Valor: <span className="fw-normal">${formatearMoneda(p.valor)}</span></strong>
                         <strong className='d-block'>Total: <span className="fw-normal">${formatearMoneda(p.total)}</span></strong>
-                        <strong className='d-block'>Estado: <span className="fw-normal">{p.pagado ? "Pagada" : "Impaga"}</span></strong>
+                        <strong className='d-block'>Deuda: <span className="fw-normal">{p.pagado ? "Pagada" : "Impaga"}</span></strong>
+                        <strong className='d-block'>Estado: <span className="fw-normal">{p.estado}</span></strong>
                     </div>
                     {/* <-- COLUMNA 4 --> */}
                     <div className='row col-4 d-flex border-end'>
@@ -266,14 +358,268 @@ const Prestaciones = () => {
                     
                 )
             }
-            </ul>
+        </ul>
+
+        {/* <-- MODAL CREAR PRESTACIÓN --> */}
+            <div className="modal fade" id="modalCrearPrestacion" tabIndex="-1" aria-hidden="true">
+                <div className="modal-dialog modal-lg">
+                    <div className="modal-content">
+                        <div className="modal-header border-bottom-1 pb-3">
+                            <h5 className="modal-title fs-5">Crear Nueva Prestación</h5>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div className="modal-body pt-3">
+                            <form className="row g-3" id="formCrearPrestacion">
+
+                                {/* --- DATOS PRINCIPALES --- */}
+                                <h6 className="fw-bold text-danger mb-0 mt-4 border-bottom pb-2">Datos Generales</h6>
+                                        
+                                {/* Fila 1: Prestador, Especialidad, Paciente */}
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Prestador <span className="text-danger">*</span></label>
+                                    <select 
+                                        className="form-select" 
+                                        name="prestador" 
+                                        required
+                                        value={nuevoPrestador}
+                                        onChange={(e) => setNuevoPrestador(e.target.value)}
+                                    >
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Pablo">Pablo</option>
+                                        <option value="Salud del Valle">Salud del Valle</option>
+                                        <option value="Bariss Salud">Bariss Salud</option>
+                                        <option value="Privado">Privado</option>
+                                    </select>
+                                </div>
+                                        
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Especialidad <span className="text-danger">*</span></label>
+                                    <select 
+                                        className="form-select" 
+                                        name="especialidad" 
+                                        required
+                                        value={nuevaEspecialidad}
+                                        onChange={(e) => setNuevaEspecialidad(e.target.value)}
+                                    >
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Traslado">Traslado</option>
+                                        <option value="Enfermería">Enfermería</option>
+                                        <option value="Dialisis">Diálisis</option>
+                                    </select>
+                                </div>
+                                        
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Paciente <span className="text-danger">*</span></label>
+                                    <div className="dropdown">
+                                        <button className="form-select text-start" data-bs-toggle="dropdown" type="button">
+                                            {pacienteSeleccionado ? `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellido}` : "Seleccionar Paciente..."}
+                                        </button>
+                                        <ul className="dropdown-menu w-100 p-2 shadow" style={{maxHeight: '250px', overflowY: 'auto'}}>
+                                            <input 
+                                                type="text" 
+                                                className="form-control mb-2" 
+                                                placeholder="Buscar paciente..." 
+                                                value={busquedaPaciente} 
+                                                onChange={(e) => setBusquedaPaciente(e.target.value)} 
+                                            />
+                                            {pacientesParaDropdown.length > 0 ? (
+                                                pacientesParaDropdown.map(p => (
+                                                    <li key={p.id}>
+                                                        <button 
+                                                            className="dropdown-item rounded" 
+                                                            type="button" 
+                                                            onClick={() => setPacienteSeleccionado(p)}
+                                                        >
+                                                            {p.nombre} {p.apellido}
+                                                        </button>
+                                                    </li>
+                                                ))
+                                            ) : (
+                                                <li className="text-muted text-center py-2">No se encontraron pacientes</li>
+                                            )}
+                                        </ul>
+                                        <input type="hidden" name="paciente_id" value={pacienteSeleccionado?.id || ''} required />
+                                    </div>
+                                </div>
+                                        
+                                {/* Fila 2: Recurso, Fechas */}
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Recurso</label>
+                                    <input type="text" name="recurso" className="form-control" placeholder="Persona a cargo..." />
+                                </div>
+                                        
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Fecha Inicio <span className="text-danger">*</span></label>
+                                    <input type="date" name="fecha_inicio" className="form-control" required />
+                                </div>
+                                        
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Fecha Fin</label>
+                                    <input type="date" name="fecha_fin" className="form-control" />
+                                </div>
+                                        
+                                        
+                                {/* Fila 3: Valores Monetarios y Cantidad */}
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Cantidad</label>
+                                    <input type="number" name="cantidad" className="form-control" />
+                                </div>
+                                        
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Valor (Unitario)</label>
+                                    <div className="input-group">
+                                        <span className="input-group-text">$</span>
+                                        <input type="number" step="0.01" name="valor" className="form-control" />
+                                    </div>
+                                </div>
+                                        
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold">Total</label>
+                                    <div className="input-group">
+                                        <span className="input-group-text">$</span>
+                                        <input type="number" step="0.01" name="total" className="form-control" />
+                                    </div>
+                                </div>
+                                {/* Fila 4: Horario, Estado, Deuda, Frecuencia */}
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Frecuencia</label>
+                                    <input type="text" name="frecuencia" className="form-control" placeholder="Ej: 3xsem" />
+                                </div>
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Horario</label>
+                                    <input type="time" name="horario" className="form-control" />
+                                </div>
+                                        
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Estado</label>
+                                    <select className="form-select" name="estado" defaultValue="Sin asignar">
+                                        <option value="Sin asignar">Sin asignar</option>
+                                        <option value="Asignado">Asignado</option>
+                                        <option value="Pendiente">Pendiente</option>
+                                        <option value="Finalizado">Finalizado</option>
+                                    </select>
+                                </div>
+                                        
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Deuda</label>
+                                    <select className="form-select" name="pagado" defaultValue="false">
+                                        <option value="true">Pagada</option>
+                                        <option value="false">Impaga</option>
+                                    </select>
+                                </div>
+                                        
+
+                                <h6 className="fw-bold text-danger mb-0 mt-4 border-bottom pb-2" style={{color: 'var(--color-primario)'}}>Datos Particulares</h6>
+
+                                {/* Solo si la especialidad es Traslado */}
+                                {nuevaEspecialidad === 'Traslado' && (
+                                    <>
+                                        <div className="col-md-4">
+                                            <label className="form-label fw-bold">Móvil</label>
+                                            <select className="form-select" name="movil">
+                                                <option value="">-</option>
+                                                <option value="k1">k1</option>
+                                                <option value="k2">k2</option>
+                                                <option value="k3">k3</option>
+                                                <option value="k4">k4</option>
+                                            </select>
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="form-label fw-bold">Centro Médico</label>
+                                            <input type="text" name="centro_medico" className="form-control" />
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Privado */}
+                                {nuevoPrestador === 'Privado' && (
+                                    <div className="col-md-4">
+                                        <label className="form-label fw-bold">Turno</label>
+                                        <input type="text" name="turno" className="form-control" />
+                                    </div>
+                                )}
+
+                                {/* Bariss Salud o Privado (Comparten Feriado) */}
+                                {(nuevoPrestador === 'Bariss Salud' || nuevoPrestador === 'Privado') && (
+                                    <>
+                                        <div className="col-md-3">
+                                            <label className="form-label fw-bold">Hs Feriado</label>
+                                            <input type="number" name="hs_feriado" className="form-control" />
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className="form-label fw-bold">Valor Hs Feriado</label>
+                                            <div className="input-group">
+                                                <span className="input-group-text">$</span>
+                                                <input type="number" step="0.01" name="valor_hs_feriado" className="form-control" />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Solo Bariss Salud */}
+                                {nuevoPrestador === 'Bariss Salud' && (
+                                    <>
+                                        <div className="col-md-3">
+                                            <label className="form-label fw-bold">Hs Extra</label>
+                                            <input type="number" name="hs_extra" className="form-control" />
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className="form-label fw-bold">Valor Hs Extra</label>
+                                            <div className="input-group">
+                                                <span className="input-group-text">$</span>
+                                                <input type="number" step="0.01" name="valor_hs_extra" className="form-control" />
+                                            </div>
+                                        </div>
+
+                                        <div className="col-md-3">
+                                            <label className="form-label fw-bold">Hs Doble</label>
+                                            <input type="number" name="hs_doble" className="form-control" />
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className="form-label fw-bold">Valor Hs Doble</label>
+                                            <div className="input-group">
+                                                <span className="input-group-text">$</span>
+                                                <input type="number" step="0.01" name="valor_hs_doble" className="form-control" />
+                                            </div>
+                                        </div>
+                                
+                                        <div className="col-md-3">
+                                            <label className="form-label fw-bold">Hs E+F</label>
+                                            <input type="number" name="hs_e_f" className="form-control" />
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label className="form-label fw-bold">Valor Hs E+F</label>
+                                            <div className="input-group">
+                                                <span className="input-group-text">$</span>
+                                                <input type="number" step="0.01" name="valor_hs_e_f" className="form-control" />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                                        
+                                <div className="col-12 mt-4">
+                                    <label className="form-label fw-bold">Observaciones</label>
+                                    <textarea className="form-control" rows="2" name="observaciones"></textarea>
+                                </div>
+                                        
+                            </form>
+                        </div>
+                                        
+                        <div className="modal-footer border-top-0 pt-0 mt-3">
+                            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" className="btn boton-accion" onClick={guardarNuevaPrestacion}>Guardar Prestación</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {/* <-- MODAL EDITAR PRESTACIÓN --> */}
             <div className="modal fade" id="modalEditarPrestacion" tabIndex="-1" aria-hidden="true">
                 <div className="modal-dialog modal-lg">
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h5 className="modal-title">Editar Prestación #{prestacionActual?.id}</h5>
+                            <h5 className="modal-title">Editar Prestación <span className="text-danger fs-5">#{prestacionActual?.id}</span></h5>
                             <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
 
@@ -330,7 +676,7 @@ const Prestaciones = () => {
                                     />
                                 </div>
 
-                                {/* --- FILA 3: Cantidad, Frecuencia y Estado --- */}
+                                {/* --- FILA 3: Valores Monetarios y Cantidad --- */}
                                 <div className="col-md-4">
                                     <label className="form-label fw-bold">Cantidad</label>
                                     <input 
@@ -342,30 +688,6 @@ const Prestaciones = () => {
                                 </div>
 
                                 <div className="col-md-4">
-                                    <label className="form-label fw-bold">Frecuencia</label>
-                                    <input 
-                                        type="text" 
-                                        name="frecuencia"
-                                        className="form-control" 
-                                        defaultValue={prestacionActual.frecuencia} 
-                                        placeholder="Ej: 4xsem"
-                                    />
-                                </div>
-
-                                <div className="col-md-4">
-                                    <label className="form-label fw-bold">Estado</label>
-                                    <select 
-                                        className="form-select" 
-                                        name="pagado"
-                                        defaultValue={prestacionActual.pagado ? "true" : "false"}
-                                    >
-                                        <option value="true">Pagada</option>
-                                        <option value="false">Impaga</option>
-                                    </select>
-                                </div>
-
-                                {/* --- FILA 4: Valores Monetarios --- */}
-                                <div className="col-md-6">
                                     <label className="form-label fw-bold">Valor (Unitario)</label>
                                     <div className="input-group">
                                         <span className="input-group-text">$</span>
@@ -379,7 +701,7 @@ const Prestaciones = () => {
                                     </div>
                                 </div>
 
-                                <div className="col-md-6">
+                                <div className="col-md-4">
                                     <label className="form-label fw-bold">Total</label>
                                     <div className="input-group">
                                         <span className="input-group-text">$</span>
@@ -393,10 +715,57 @@ const Prestaciones = () => {
                                     </div>
                                 </div>
 
+                                {/* --- FILA 4: Frecuencia, Horario, Estado, Deuda --- */}
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Frecuencia</label>
+                                    <input 
+                                        type="text" 
+                                        name="frecuencia"
+                                        className="form-control" 
+                                        defaultValue={prestacionActual.frecuencia} 
+                                        placeholder="Ej: 4xsem"
+                                    />
+                                </div>
+
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Horario</label>
+                                    <input 
+                                        type="time" 
+                                        name="horario"
+                                        className="form-control" 
+                                        defaultValue={prestacionActual.horario || ""} 
+                                    />
+                                </div>
+
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Estado</label>
+                                    <select 
+                                        className="form-select" 
+                                        name="estado"
+                                        defaultValue={prestacionActual.estado || "Sin asignar"}
+                                    >
+                                        <option value="Sin asignar">Sin asignar</option>
+                                        <option value="Asignado">Asignado</option>
+                                        <option value="Pendiente">Pendiente</option>
+                                        <option value="Finalizado">Finalizado</option>
+                                    </select>
+                                </div>
+
+                                <div className="col-md-3">
+                                    <label className="form-label fw-bold">Deuda</label>
+                                    <select 
+                                        className="form-select" 
+                                        name="pagado"
+                                        defaultValue={prestacionActual.pagado ? "true" : "false"}
+                                    >
+                                        <option value="true">Pagada</option>
+                                        <option value="false">Impaga</option>
+                                    </select>
+                                </div>
                                 {prestacionActual.detalles_extras && Object.keys(prestacionActual.detalles_extras).length > 0 && (
                                     <>
                                         <hr className="my-4" />
-                                        <h6 className="fw-bold text-primary mt-0">Detalles Especificos</h6>
+                                        <h6 className="fw-bold text-danger mt-0">Detalles Especificos</h6>
                                         {Object.entries(prestacionActual.detalles_extras).map(([clave, valor]) => (
                                             <div className="col-md-4" key={clave}>
                                                 <label className="form-label text-capitalize fw-bold">
@@ -443,7 +812,7 @@ const Prestaciones = () => {
                         
                         <div className="modal-footer">
                             <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button" className="btn btn-primary" onClick={() => editarPrestacion()}>Guardar Cambios</button>
+                            <button type="button" className="btn boton-accion" onClick={() => editarPrestacion()}>Guardar Cambios</button>
                         </div>
                     </div>
                 </div>

@@ -21,6 +21,21 @@ export const obtenerPrestaciones = () => {
         });
 }
 
+export const crearPrestacion = (datos) => {
+    return Axios.post(`${url}/prestaciones`, datos, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true' 
+        }
+    })
+    .then(respuesta => {
+        return respuesta.data; 
+    })
+    .catch(error => {
+        console.error("Error al crear la prestacion:", error);
+        throw error;
+    });
+}
+
 export const prestacionEdit = (id, datos) => {
     return Axios.put(`${url}/prestaciones/${id}`, datos, {
         headers: {
@@ -33,5 +48,35 @@ export const prestacionEdit = (id, datos) => {
     .catch(error => {
         console.error("Error al editar la prestacion:", error);
         throw error;
+    });
+}
+
+export const eliminarPrestacion = (id) => {
+    return Axios.delete(`${url}/prestaciones/${id}`, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true' 
+        }
+    })
+    .then(respuesta => {
+        return respuesta.data; 
+    })
+    .catch(error => {
+        console.error("Error al eliminar la prestacion:", error);
+        throw error;
+    });
+}
+
+export const obtenerPacientes = () => {
+    return Axios.get(`${url}/pacientes`, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true'
+        }
+    })
+    .then(respuesta => {
+        return respuesta.data; 
+    })
+    .catch(error => {
+        console.error("Error al traer los pacientes:", error);
+        return []; 
     });
 }

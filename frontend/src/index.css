@@ -9,6 +9,7 @@ body, html {
 }
 
 :root {
+  --color-primario: rgb(255, 87, 87);
   --color-fondo: rgba(165, 165, 165, 0.37);
 }
 #root {
@@ -17,11 +18,14 @@ body, html {
 }
 
 .boton-accion {
-  background-color: rgb(255, 87, 87) !important;
-  height: 40px;
+  background-color: var(--color-primario) !important;
+  height: 36px;
   width: auto !important;
   color: white !important;
   font-weight: 600 !important;
+  font-size: 14px !important;
+  display: flex;
+  align-items: center;
 }
 
 .btn.boton-accion:hover  {
@@ -29,7 +33,7 @@ body, html {
 }
 
 .btn.boton-accion:active {
-  background-color: rgb(255, 87, 87) !important;
+  background-color: var(--color-primario) !important;
 }
 
 .boton-selector {
