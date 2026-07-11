@@ -18,3 +18,7 @@ export const formatearFecha = (date) =>{
 export const formatearHorario = (horario) => {
     return horario.slice(0, 5);
 }
+
+export const borrarTildes = (texto) => {
+    return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};

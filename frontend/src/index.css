@@ -67,6 +67,14 @@ body, html {
     color: #dc3545 !important;
 }
 
+.filtro-abm {
+    background-color: white;
+    padding: 6px;
+    border: 1px solid #CCCCCC;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
 @media (max-width: 1600px) {
   * {
     font-size: 13px;

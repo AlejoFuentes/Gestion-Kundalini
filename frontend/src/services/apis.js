@@ -6,6 +6,11 @@ export const obtenerMovimientos = () => {
     return Axios.get(`${url}/caja`);
 }
 
+//=======================================================
+//========        PRESTACIONES          =================
+//=======================================================
+
+
 export const obtenerPrestaciones = () => {
     return Axios.get(`${url}/prestaciones`, {
         headers: {
@@ -66,6 +71,12 @@ export const eliminarPrestacion = (id) => {
     });
 }
 
+
+//=======================================================
+//===========        PACIENTES          =================
+//=======================================================
+
+
 export const obtenerPacientes = () => {
     return Axios.get(`${url}/pacientes`, {
         headers: {
@@ -78,5 +89,20 @@ export const obtenerPacientes = () => {
     .catch(error => {
         console.error("Error al traer los pacientes:", error);
         return []; 
+    });
+}
+
+export const crearPaciente = (datos) => {
+    return Axios.post(`${url}/pacientes`, datos, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true' 
+        }
+    })
+    .then(respuesta => {
+        return respuesta.data; 
+    })
+    .catch(error => {
+        console.error("Error al crear el paciente:", error);
+        throw error;
     });
 }

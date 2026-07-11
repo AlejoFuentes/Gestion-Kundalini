@@ -5,8 +5,9 @@ const Sidebar = () => {
 
     const menuItems = [
         { nombre: 'Prestaciones', icono: 'bi-truck', url: '/prestaciones' },
-        { nombre: 'Sueldos', icono: 'bi-wallet2', url: '/sueldos' },
         { nombre: 'Pacientes', icono: 'bi-people', url: '/pacientes' },
+        { nombre: 'Recurso', src: '/images/doctor.png', url: '/' },
+        { nombre: 'Sueldos', icono: 'bi-wallet2', url: '/sueldos' },
         { nombre: 'Usuarios', icono: 'bi-person', url: '/usuarios' },
         { nombre: 'Caja', icono: 'bi-cash-coin', url: '/caja' },
         { nombre: 'Agenda', icono: 'bi-calendar-event', url: '/agenda' },
@@ -26,7 +27,15 @@ const Sidebar = () => {
                                     key={index} 
                                     className='btn boton-selector mb-2'
                                 >
-                                    <i className={`bi ${item.icono} fs-4 me-2`}></i>
+                                    {item.src ? (
+                                        <img 
+                                            src={item.src} 
+                                            alt={item.nombre} 
+                                            className="imagen-logo-boton me-2"
+                                        />
+                                    ) : (
+                                        <i className={`bi ${item.icono} fs-4 me-2`}></i>
+                                    )}
                                     {item.nombre}
                                 </NavLink>
                             ))}

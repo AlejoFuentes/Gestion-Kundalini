@@ -1,0 +1,16 @@
+.container-pacientes {
+    width: 100%;
+
+    .dropdown-filtro {
+        border: none;
+        padding-bottom: 1px;
+        background-color: transparent;
+    }
+
+    .input-filtro {
+        border: none;
+        padding-block: 0px;
+        outline: none; 
+        background-color: transparent;  
+    }
+}

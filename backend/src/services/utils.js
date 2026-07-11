@@ -1,0 +1,1 @@
+export const limpiar = (val) => (val === undefined || val === null || String(val).trim() === '') ? null : val;

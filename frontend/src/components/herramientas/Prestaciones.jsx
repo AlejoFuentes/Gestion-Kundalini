@@ -9,7 +9,9 @@ const Prestaciones = () => {
     const [filtroActivo, setFiltroActivo] = useState('Todos');
     const [fechaDesde, setFechaDesde] = useState('');
     const [fechaHasta, setFechaHasta] = useState('');
-    const [estado, setEstado] = useState('Todas');
+    const [deuda, setDeuda] = useState('Todas');
+    const [estado, setEstado] = useState('Todos');
+    const [especialidad, setEspecialidad] = useState('Todas');
     const [prestacionActual, setPrestacionActual] = useState('');
 
     const [loading, setLoading] = useState(true);
@@ -92,7 +94,7 @@ const Prestaciones = () => {
 
         const camposPrincipales = [
             'paciente_id', 'prestador', 'especialidad', 'fecha_inicio', 'fecha_fin',
-            'cantidad', 'valor', 'total', 'frecuencia', 'horario', 'estado', 'pagado', 'observaciones'
+            'cantidad', 'valor', 'total', 'frecuencia', 'horario', 'estado', 'pagado', 'observaciones', 'recurso'
         ];
 
         let detalles_extras = {};
@@ -187,16 +189,26 @@ const Prestaciones = () => {
         return cumpleDesde && cumpleHasta;
     }
 
+    const filtroDeuda = (prestacion) => {
+        return deuda === "Todas" || 
+              (deuda === "Pagadas" && prestacion.pagado === true) ||
+              (deuda === "Impagas" && prestacion.pagado === false);
+    }
+
     const filtroEstado = (prestacion) => {
-        return estado === "Todas" || 
-              (estado === "Pagadas" && prestacion.pagado === true) ||
-              (estado === "Impagas" && prestacion.pagado === false);
+        return estado === "Todos" || prestacion.estado === estado;
+    }
+
+    const filtroEspecialidad = (prestacion) => {
+        return especialidad === "Todas" || prestacion.especialidad === especialidad;
     }
 
     const prestacionesFiltradas = prestaciones?.filter(prestacion => 
         filtroPrestador(prestacion) && 
         filtroFechas(prestacion) &&
-        filtroEstado(prestacion)
+        filtroDeuda(prestacion) && 
+        filtroEstado(prestacion) &&
+        filtroEspecialidad(prestacion)
     ) || [];
 
     return (
@@ -220,7 +232,7 @@ const Prestaciones = () => {
                 <div className='d-flex align-items-center gap-2'>
                     
                 
-                <strong className="filtro-prestacion shadow" style={{ fontSize: "14px"}}>Fecha desde:&nbsp; 
+                <strong className="filtro-abm shadow" style={{ fontSize: "14px"}}>Fecha desde:&nbsp; 
                     <input 
                         className='input-filtro'
                         type="date"
@@ -228,7 +240,7 @@ const Prestaciones = () => {
                         onChange={(e) => setFechaDesde(e.target.value)} 
                     />
                 </strong>
-                <strong className="filtro-prestacion shadow" style={{ fontSize: "14px"}}>Fecha hasta:&nbsp; 
+                <strong className="filtro-abm shadow" style={{ fontSize: "14px"}}>Fecha hasta:&nbsp; 
                     <input 
                         className='input-filtro'
                         type="date"
@@ -236,11 +248,12 @@ const Prestaciones = () => {
                         onChange={(e) => setFechaHasta(e.target.value)} 
                     />
                 </strong>
-                <strong className="filtro-prestacion d-flex align-items-center shadow" style={{ fontSize: "14px"}}>Deuda: 
+
+                <strong className="filtro-abm d-flex align-items-center shadow" style={{ fontSize: "14px"}}>Deuda: 
                     <select 
                         className="dropdown-filtro form-select form-select-sm" 
-                        value={estado} 
-                        onChange={(e) => setEstado(e.target.value)}
+                        value={deuda} 
+                        onChange={(e) => setDeuda(e.target.value)}
                         style={{ width: "auto", cursor: "pointer" }}
                     >
                         <option value="Todas">Todas</option>
@@ -248,9 +261,40 @@ const Prestaciones = () => {
                         <option value="Impagas">Impagas</option>
                     </select>
                 </strong>
+
+                <strong className="filtro-abm d-flex align-items-center shadow" style={{ fontSize: "14px"}}>Estado: 
+                    <select 
+                        className="dropdown-filtro form-select form-select-sm" 
+                        value={estado} 
+                        onChange={(e) => setEstado(e.target.value)}
+                        style={{ width: "auto", cursor: "pointer" }}
+                    >
+                        <option value="Todos">Todos</option>
+                        <option value="Sin asignar">Sin asignar</option>
+                        <option value="Asignado">Asignado</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Finalizado">Finalizado</option>
+                    </select>
+                </strong>
+
+                <strong className="filtro-abm d-flex align-items-center shadow" style={{ fontSize: "14px"}}>Especialidad: 
+                    <select 
+                        className="dropdown-filtro form-select form-select-sm" 
+                        value={especialidad} 
+                        onChange={(e) => setEspecialidad(e.target.value)}
+                        style={{ width: "auto", cursor: "pointer" }}
+                    >
+                        <option value="Todas">Todas</option>
+                        <option value="Traslado">Traslado</option>
+                        <option value="Enfermería">Enfermería</option>
+                        <option value="Dialisis">Diálisis</option>
+                    </select>
+                </strong>
+
                 </div>
-                <div className='btn boton-accion align-items-center d-flex gap-1' data-bs-toggle="modal" data-bs-target="#modalCrearPrestacion">
-                    <i className="bi bi-plus-circle me-1"></i> Crear nueva prestación 
+
+                <div className='btn boton-accion d-flex gap-1' data-bs-toggle="modal" data-bs-target="#modalCrearPrestacion">
+                    <i className="bi bi-plus-circle mt-1 me-1"></i> Crear nueva prestación 
                 </div>
             </div>
 
@@ -274,6 +318,7 @@ const Prestaciones = () => {
                             <strong className='d-block'>Horario: <span className="fw-normal">{formatearHorario(p.horario)}</span></strong>
                         )}
                         <strong className='d-block'>Especialidad: <span className="fw-normal">{p.especialidad}</span></strong>
+                        <strong className='d-block'>Recurso: <span className="fw-normal">{p.recurso || "Sin asignar"}</span></strong>
                         {p.detalles_extras?.movil && (
                         <strong className='d-block'>Móvil asignado: <span className="fw-normal">{p.detalles_extras.movil}</span></strong>
                         )}
@@ -333,7 +378,7 @@ const Prestaciones = () => {
                                 </>
                             )}
                         </div>
-                        <strong className='d-block col-12'>Observaciones: <span className="fw-normal">{p.observaciones}</span></strong>
+                        <strong className='d-block col-12'>Observaciones: <span className="fw-normal">{p.observaciones || '- -'}</span></strong>
                     </div>
                     {/* <-- COLUMNA 5 --> */}
                     <div className='col-1 d-flex flex-column align-items-end'>
