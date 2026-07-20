@@ -106,3 +106,52 @@ export const crearPaciente = (datos) => {
         throw error;
     });
 }
+
+export const editarPaciente = (id, datos) => {
+    return Axios.put(`${url}/pacientes/${id}`, datos, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true' 
+        }
+    })
+    .then(respuesta => {
+        return respuesta.data; 
+    })
+    .catch(error => {
+        console.error("Error al editar el paciente:", error);
+        throw error;
+    });
+}
+
+export const eliminarPaciente = (id) => {
+    return Axios.delete(`${url}/pacientes/${id}`, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true' 
+        }
+    })
+    .then(respuesta => {
+        return respuesta.data; 
+    })
+    .catch(error => {
+        console.error("Error al eliminar el paciente:", error);
+        throw error;
+    });
+}
+
+//=======================================================
+//===========        RECURSOS          ==================
+//=======================================================
+
+export const obtenerRecursos = () => {
+    return Axios.get(`${url}/recursos`, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true'
+        }
+    })
+    .then(respuesta => {
+        return respuesta.data; 
+    })
+    .catch(error => {
+        console.error("Error al traer los recursos:", error);
+        return []; 
+    });
+}

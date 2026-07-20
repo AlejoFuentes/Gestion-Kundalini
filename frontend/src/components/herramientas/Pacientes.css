@@ -8,9 +8,14 @@
     }
 
     .input-filtro {
+        width: 175px;
         border: none;
         padding-block: 0px;
         outline: none; 
         background-color: transparent;  
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
     }
 }

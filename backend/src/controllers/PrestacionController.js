@@ -15,6 +15,7 @@ class PrestacionController {
                 FROM prestaciones pr
                 INNER JOIN pacientes pa ON pr.paciente_id = pa.id
                 LEFT JOIN prestaciones_profesionales pp ON pr.id = pp.prestacion_id
+                ORDER BY pr.id DESC
             `;
             
             const resultado = await this.pool.query(query);

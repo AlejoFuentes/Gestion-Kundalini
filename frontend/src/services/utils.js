@@ -22,3 +22,11 @@ export const formatearHorario = (horario) => {
 export const borrarTildes = (texto) => {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 };
+
+export const mostrarLista = (lista) => {
+    return lista && lista.length > 0 ? lista.join(' / ') : '- -';
+};
+
+export const verificarCampo = (texto) => {
+    return texto ? texto : '- -';
+};

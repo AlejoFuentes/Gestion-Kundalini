@@ -15,6 +15,7 @@
         margin: 0px;
         border-bottom: none !important;
         color:#DC3545 !important;
+        cursor: pointer;
     }
 
     .boton-selector:active, .boton-selector:hover, .boton-selector:focus {
@@ -55,6 +56,7 @@
     }
 
     .input-filtro {
+        width: 110px;
         border: none;
         padding-block: 0px;
         outline: none; 
@@ -65,36 +67,50 @@
         width: 105px !important; 
     }
     
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+    }
+    
     select.input-filtro {
         padding-right: 25px !important; 
     }
 
     @media (max-width: 1400px) {
         .filtro-prestacion {
-            font-size: 11px !important; /* Achica los textos fijos como "Fecha desde:" */
-            padding: 4px 8px; /* Achica un poco el relleno de la cajita blanca */
+            font-size: 11px !important; 
+            padding: 4px 8px; 
         }
 
         .input-filtro {
-            font-size: 12px !important; /* Achica los números de la fecha y las opciones del dropdown */
+            font-size: 12px !important; 
         }
 
         input[type="date"].input-filtro {
-            width: 100px !important; /* Achicamos un poco el ancho fijo del calendario para que no sobre espacio */
+            width: 100px !important;
+        }
+        .filtro-abm {
+            font-size: 10px !important;
         }
     }
     @media (max-width: 1100px) {
         .filtro-prestacion {
-            font-size: 10px !important; /* Achica los textos fijos como "Fecha desde:" */
-            padding: 4px 8px; /* Achica un poco el relleno de la cajita blanca */
+            font-size: 10px !important; 
+            padding: 4px 8px;
         }
 
         .input-filtro {
-            font-size: 10px !important; /* Achica los números de la fecha y las opciones del dropdown */
+            font-size: 8px !important;
         }
 
         input[type="date"].input-filtro {
-            width: 100px !important; /* Achicamos un poco el ancho fijo del calendario para que no sobre espacio */
+            width: 100px !important; 
+        }
+        .filtro-abm {
+            width: 120px !important;
+            font-size: 6px !important;
+        }
+        .boton-accion {
+            font-size: 8px !important;
         }
     }
 }

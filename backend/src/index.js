@@ -5,9 +5,11 @@ import pool from '../db.js';
 
 import PrestacionController from './controllers/PrestacionController.js';
 import PacienteController from './controllers/PacienteController.js';
+import RecursoController from './controllers/RecursoController.js';
 
 import { prestacionRouter } from './routers/PrestacionRouter.js';
 import { pacienteRouter } from './routers/PacienteRouter.js';
+import { recursoRouter } from './routers/RecursoRouter.js';
 
 dotenv.config();
 
@@ -24,9 +26,11 @@ app.use(express.urlencoded({ extended: true }));
 
 const prestacionController = new PrestacionController(pool);
 const pacienteController = new PacienteController(pool);
+const recursoController = new RecursoController(pool);
 
 app.use('/', prestacionRouter(prestacionController));
 app.use('/', pacienteRouter(pacienteController));
+app.use('/', recursoRouter(recursoController));
 
 app.get('/caja', async (req, res) => {
     try {

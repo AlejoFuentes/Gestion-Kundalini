@@ -6,7 +6,7 @@ const Sidebar = () => {
     const menuItems = [
         { nombre: 'Prestaciones', icono: 'bi-truck', url: '/prestaciones' },
         { nombre: 'Pacientes', icono: 'bi-people', url: '/pacientes' },
-        { nombre: 'Recurso', src: '/images/doctor.png', url: '/' },
+        { nombre: 'Recurso', src: '/images/doctor.png', url: '/recursos' },
         { nombre: 'Sueldos', icono: 'bi-wallet2', url: '/sueldos' },
         { nombre: 'Usuarios', icono: 'bi-person', url: '/usuarios' },
         { nombre: 'Caja', icono: 'bi-cash-coin', url: '/caja' },
