@@ -18,9 +18,16 @@ class RecursoController {
     createRecurso = async (req, res) => {
         const es_monotributista = req.body.es_monotributista === 'true';
         
-        const {
+        let {
             nombre, apellido, dni, fecha_ingreso, telefono, direccion, especialidades
         } = req.body;
+
+        // Aseguramos que especialidades sea siempre un Array para PostgreSQL
+        if (!especialidades) {
+            especialidades = [];
+        } else if (typeof especialidades === 'string') {
+            especialidades = [especialidades];
+        }
 
         const cv_url = req.files?.cv_url ? obtenerRutaArchivo(req.files.cv_url[0]) : null;
         const contrato_url = req.files?.contrato_url ? obtenerRutaArchivo(req.files.contrato_url[0]) : null;
@@ -44,6 +51,9 @@ class RecursoController {
                 titulos, certificados, especialidades, cv_url, contrato_url, es_monotributista
             ].map(limpiar);
 
+            // Forzamos especialidades a array vacío si quedó null despues de limpiar
+            valores[8] = Array.isArray(especialidades) ? especialidades : [];
+
             const resultado = await this.pool.query(query, valores);
 
             res.status(201).json({ mensaje: 'Recurso creado', recurso: resultado.rows[0] });
@@ -57,7 +67,14 @@ class RecursoController {
     updateRecurso = async (req, res) => {
         const { id } = req.params;
         const es_monotributista = req.body.es_monotributista === 'true' || req.body.es_monotributista === true;
-        const { nombre, apellido, dni, fecha_ingreso, telefono, direccion, especialidades } = req.body;
+        let { nombre, apellido, dni, fecha_ingreso, telefono, direccion, especialidades } = req.body;
+
+        // Aseguramos que especialidades sea siempre un Array para PostgreSQL
+        if (!especialidades) {
+            especialidades = [];
+        } else if (typeof especialidades === 'string') {
+            especialidades = [especialidades];
+        }
 
         const titulos_viejos = req.body.titulos_viejos ? JSON.parse(req.body.titulos_viejos) : [];
         const certificados_viejos = req.body.certificados_viejos ? JSON.parse(req.body.certificados_viejos) : [];

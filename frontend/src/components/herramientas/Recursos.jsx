@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { obtenerRecursos, crearRecurso, editarRecurso, eliminarRecurso, obtenerEspecialidades } from '../../services/apis.js';
-import { formatearFecha, borrarTildes, mostrarLista, verificarCampo } from '../../services/utils';
+import { formatearFecha, borrarTildes, mostrarLista, verificarCampo, obtenerURLCompleta } from '../../services/utils';
 import { SelectorEspecialidades } from './SelectorEspecialidades'; 
 
 const Recursos = () => {
@@ -18,12 +18,9 @@ const Recursos = () => {
         obtenerEspecialidades().then(data => setEspecialidadesGlobales(data));
     };
 
-    // Función infalible para limpiar rutas y prefijos de archivos
     const limpiarNombreArchivo = (url) => {
         if (!url) return '- -';
-        // Normaliza barras invertidas de Windows a barras normales y extrae el archivo final
         const soloNombreConTimestamp = url.replace(/\\/g, '/').split('/').pop();
-        // Si tiene el formato de timestamp (ej: 1784852832656-nombre.pdf), le saca los números del inicio
         const partes = soloNombreConTimestamp.split('-');
         if (partes.length > 1 && !isNaN(partes[0])) {
             return partes.slice(1).join('-');
@@ -242,7 +239,7 @@ const Recursos = () => {
                                     {r.titulos && r.titulos.length > 0 ? 
                                         r.titulos.map((t, i) => (
                                             <span key={i}>
-                                                <a href={t} target="_blank" rel="noopener noreferrer" className="me-2">{limpiarNombreArchivo(t)}</a>
+                                                <a href={obtenerURLCompleta(t)} target="_blank" rel="noopener noreferrer" className="me-2">{limpiarNombreArchivo(t)}</a>
                                                 {i < r.titulos.length - 1 ? '/ ' : ''}
                                             </span>
                                         )) : <span className="text-dark">- -</span>
@@ -253,7 +250,7 @@ const Recursos = () => {
                                     {r.certificados && r.certificados.length > 0 ? 
                                         r.certificados.map((c, i) => (
                                             <span key={i}>
-                                                <a href={c} target="_blank" rel="noopener noreferrer" className="me-2">{limpiarNombreArchivo(c)}</a>
+                                                <a href={obtenerURLCompleta(c)} target="_blank" rel="noopener noreferrer" className="me-2">{limpiarNombreArchivo(c)}</a>
                                                 {i < r.certificados.length - 1 ? '/ ' : ''}
                                             </span>
                                         )) : <span className="text-dark">- -</span>
@@ -262,10 +259,10 @@ const Recursos = () => {
                             </div>
                             <div className='col-3 border-end d-flex flex-column justify-content-center'>
                                 <strong className='d-block'>CV: <span className="fw-normal ms-1">
-                                    {r.cv_url ? <a href={r.cv_url} target="_blank" rel="noopener noreferrer">{limpiarNombreArchivo(r.cv_url)}</a> : '- -'}
+                                    {r.cv_url ? <a href={obtenerURLCompleta(r.cv_url)} target="_blank" rel="noopener noreferrer">{limpiarNombreArchivo(r.cv_url)}</a> : '- -'}
                                 </span></strong>
                                 <strong className='d-block mt-1'>Contrato: <span className="fw-normal ms-1">
-                                    {r.contrato_url ? <a href={r.contrato_url} target="_blank" rel="noopener noreferrer">{limpiarNombreArchivo(r.contrato_url)}</a> : '- -'}
+                                    {r.contrato_url ? <a href={obtenerURLCompleta(r.contrato_url)} target="_blank" rel="noopener noreferrer">{limpiarNombreArchivo(r.contrato_url)}</a> : '- -'}
                                 </span></strong>
                             </div>
                             <div className='col-1 d-flex flex-column align-items-center justify-content-center pe-0'>

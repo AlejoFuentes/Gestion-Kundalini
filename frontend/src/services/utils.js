@@ -34,3 +34,10 @@ export const verificarCampo = (texto) => {
 export const formatearURLArchivo = (url) => {
     return url ? url.split('/').pop() : '';
 };
+
+export const obtenerURLCompleta = (urlArchivo) => {
+    if (!urlArchivo) return '#';
+    if (urlArchivo.startsWith('http')) return urlArchivo;
+    const rutaLimpia = urlArchivo.startsWith('/') ? urlArchivo : `/${urlArchivo}`;
+    return `http://localhost:3000${rutaLimpia}`;
+};
