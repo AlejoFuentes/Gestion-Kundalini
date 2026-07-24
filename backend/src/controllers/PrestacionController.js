@@ -117,8 +117,6 @@ class PrestacionController {
             estado
         } = req.body;
 
-        const limpiar = (val) => (val === undefined || val === null || String(val).trim() === '') ? null : val;
-
         try {
             const query = `
                 UPDATE prestaciones 

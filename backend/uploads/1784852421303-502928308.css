@@ -1,0 +1,21 @@
+.container-pacientes {
+    width: 100%;
+
+    .dropdown-filtro {
+        border: none;
+        padding-bottom: 1px;
+        background-color: transparent;
+    }
+
+    .input-filtro {
+        width: 175px;
+        border: none;
+        padding-block: 0px;
+        outline: none; 
+        background-color: transparent;  
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+    }
+}

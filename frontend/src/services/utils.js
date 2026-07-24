@@ -30,3 +30,7 @@ export const mostrarLista = (lista) => {
 export const verificarCampo = (texto) => {
     return texto ? texto : '- -';
 };
+
+export const formatearURLArchivo = (url) => {
+    return url ? url.split('/').pop() : '';
+};

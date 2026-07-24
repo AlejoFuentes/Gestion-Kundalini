@@ -155,3 +155,88 @@ export const obtenerRecursos = () => {
         return []; 
     });
 }
+
+export const crearRecurso = (datosFormData) => {
+    return Axios.post(`${url}/recursos`, datosFormData, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true',
+            'Content-Type': 'multipart/form-data' 
+        }
+    })
+    .then(respuesta => respuesta.data)
+    .catch(error => {
+        console.error("Error al crear el recurso:", error);
+        throw error;
+    });
+}
+
+export const editarRecurso = (id, datosFormData) => {
+    return Axios.put(`${url}/recursos/${id}`, datosFormData, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true',
+            'Content-Type': 'multipart/form-data' 
+        }
+    })
+    .then(respuesta => respuesta.data)
+    .catch(error => {
+        console.error("Error al editar el recurso:", error);
+        throw error;
+    });
+}
+
+export const eliminarRecurso = (id) => {
+    return Axios.delete(`${url}/recursos/${id}`, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true'
+        }
+    })
+    .then(respuesta => respuesta.data)
+    .catch(error => {
+        console.error("Error al eliminar el recurso:", error);
+        throw error;
+    });
+}
+
+//=======================================================
+//===========        ESPECIALIDADES        ==============
+//=======================================================
+
+export const obtenerEspecialidades = () => {
+    return Axios.get(`${url}/especialidades`, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true'
+        }
+    })
+    .then(respuesta => respuesta.data)
+    .catch(error => {
+        console.error("Error al traer las especialidades:", error);
+        return [];
+    });
+}
+
+export const crearEspecialidad = (nombre) => {
+    return Axios.post(`${url}/especialidades`, { nombre }, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true'
+        }
+    })
+    .then(respuesta => respuesta.data)
+    .catch(error => {
+        console.error("Error al crear la especialidad:", error);
+        throw error;
+    });
+}
+
+export const eliminarEspecialidadGlobal = (id) => {
+    return Axios.delete(`${url}/especialidades/${id}`, {
+        headers: {
+            'ngrok-skip-browser-warning': 'true'
+        }
+    })
+    .then(respuesta => respuesta.data)
+    .catch(error => {
+        console.error("Error al eliminar la especialidad:", error);
+        throw error;
+    });
+}
+

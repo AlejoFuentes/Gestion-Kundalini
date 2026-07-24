@@ -6,7 +6,9 @@ import pool from '../db.js';
 import PrestacionController from './controllers/PrestacionController.js';
 import PacienteController from './controllers/PacienteController.js';
 import RecursoController from './controllers/RecursoController.js';
+import EspecialidadController from './controllers/EspecialidadController.js';
 
+import { especialidadRouter } from './routers/EspecialidadRouter.js';
 import { prestacionRouter } from './routers/PrestacionRouter.js';
 import { pacienteRouter } from './routers/PacienteRouter.js';
 import { recursoRouter } from './routers/RecursoRouter.js';
@@ -23,14 +25,17 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static('uploads'));
 
 const prestacionController = new PrestacionController(pool);
 const pacienteController = new PacienteController(pool);
 const recursoController = new RecursoController(pool);
+const especialidadController = new EspecialidadController(pool);
 
 app.use('/', prestacionRouter(prestacionController));
 app.use('/', pacienteRouter(pacienteController));
 app.use('/', recursoRouter(recursoController));
+app.use('/', especialidadRouter(especialidadController));
 
 app.get('/caja', async (req, res) => {
     try {
