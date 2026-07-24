@@ -1,7 +1,10 @@
 import './Prestaciones.css'
-import { useState, useEffect } from 'react'
-import { obtenerPrestaciones, prestacionEdit, crearPrestacion, eliminarPrestacion, obtenerPacientes } from '../../services/apis';
-import { formatearFecha, formatearMoneda, formatearHorario } from '../../services/utils';
+import { useState, useEffect, useRef } from 'react'
+import { obtenerPrestaciones, prestacionEdit, crearPrestacion, eliminarPrestacion, obtenerPacientes, obtenerRecursos } from '../../services/apis';
+import { formatearFecha, formatearMoneda, formatearHorario, mostrarNombresRecursos } from '../../services/utils';
+import SelectorPaciente from './SelectorPaciente';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Prestaciones = () => {
     
@@ -17,33 +20,70 @@ const Prestaciones = () => {
 
     const [loading, setLoading] = useState(true);
 
-    
     const [pacientes, setPacientes] = useState([]);
-    const [busquedaPaciente, setBusquedaPaciente] = useState('');
-    const [pacienteSeleccionado, setPacienteSeleccionado] = useState(null);
-    
-    const pacientesParaDropdown = pacientes.filter(p => 
-        `${p.nombre} ${p.apellido}`.toLowerCase().includes(busquedaPaciente.toLowerCase())
-    );
+    const [pacienteSeleccionadoCrear, setPacienteSeleccionadoCrear] = useState(null);
+    const [pacienteSeleccionadoEditar, setPacienteSeleccionadoEditar] = useState(null);
+
+    const [recursosGlobales, setRecursosGlobales] = useState([]);
+    const [recursosCrear, setRecursosCrear] = useState([]);
+    const [recursosEditar, setRecursosEditar] = useState([]);
+    const [abiertoCrearRecursos, setAbiertoCrearRecursos] = useState(false);
+    const [abiertoEditarRecursos, setAbiertoEditarRecursos] = useState(false);
+
+    const crearDropdownRef = useRef(null);
+    const editarDropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (crearDropdownRef.current && !crearDropdownRef.current.contains(event.target)) {
+                setAbiertoCrearRecursos(false);
+            }
+            if (editarDropdownRef.current && !editarDropdownRef.current.contains(event.target)) {
+                setAbiertoEditarRecursos(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const [nuevoPrestador, setNuevoPrestador] = useState('');
     const [nuevaEspecialidad, setNuevaEspecialidad] = useState('');
     
-        useEffect (() => {
-            setLoading(true);
-                
-            Promise.all([
-                obtenerPrestaciones(),
-                obtenerPacientes()
-            ]).then(([resPrestaciones, resPacientes]) => {
-                setPrestaciones(resPrestaciones);
-                setPacientes(resPacientes); 
-                setLoading(false);
-            });
-        },[]);
+    useEffect (() => {
+        setLoading(true);
+            
+        Promise.all([
+            obtenerPrestaciones(),
+            obtenerPacientes(),
+            obtenerRecursos()
+        ]).then(([resPrestaciones, resPacientes, resRecursos]) => {
+            setPrestaciones(resPrestaciones);
+            setPacientes(resPacientes); 
+            setRecursosGlobales(resRecursos);
+            setLoading(false);
+        });
+    },[]);
+
+    useEffect(() => {
+        if (prestacionActual) {
+            if (prestacionActual.recurso) {
+                const ids = prestacionActual.recurso.map(r => Number(r.id));
+                setRecursosEditar(ids);
+            } else {
+                setRecursosEditar([]);
+            }
+            if (prestacionActual.paciente) {
+                setPacienteSeleccionadoEditar(prestacionActual.paciente);
+            }
+        } else {
+            setRecursosEditar([]);
+            setPacienteSeleccionadoEditar(null);
+        }
+    }, [prestacionActual]);
     
     const accionesBotones = [
-
         { nombre: "Editar Prestación", 
           icono: "bi bi-pencil-square",
           color: "rgb(165, 22, 22)",
@@ -52,19 +92,6 @@ const Prestaciones = () => {
           },
           modalTarget: "#modalEditarPrestacion"
         },
-
-        { nombre: "Duplicar Prestación", 
-          icono: "bi bi-back",
-          color: "rgb(8, 6, 6)",
-        //   accion: (f) => {
-        //     setFacturaActual(f);
-        //     setNumeroSeleccionado("2");
-        //     setMesSeleccionado(`${String(f.mes).slice(0, 4)}-${String(f.mes).slice(4)}`)
-        //   },
-        //   mostrar: (f) => !f.numero,
-        //   modalTarget: "#modalDividirFactura"
-         },
-
         { nombre: "Eliminar Prestación",
           icono: "bi bi-trash3-fill",
           color: "rgb(165, 22, 22)",
@@ -85,7 +112,7 @@ const Prestaciones = () => {
             return;
         }
 
-        if (!pacienteSeleccionado) {
+        if (!pacienteSeleccionadoCrear) {
             alert("Por favor, seleccioná un paciente de la lista.");
             return;
         }
@@ -95,7 +122,7 @@ const Prestaciones = () => {
 
         const camposPrincipales = [
             'paciente_id', 'prestador', 'especialidad', 'fecha_inicio', 'fecha_fin',
-            'cantidad', 'valor', 'total', 'frecuencia', 'horario', 'estado', 'pagado', 'observaciones', 'recurso'
+            'cantidad', 'valor', 'frecuencia', 'horario', 'estado', 'pagado', 'observaciones'
         ];
 
         let detalles_extras = {};
@@ -112,18 +139,18 @@ const Prestaciones = () => {
         });
 
         datosAEnviar.detalles_extras = detalles_extras;
+        datosAEnviar.recurso = recursosCrear; 
 
         crearPrestacion(datosAEnviar)
             .then(() => {
                 obtenerPrestaciones().then(res => setPrestaciones(res));
-
                 document.querySelector('#modalCrearPrestacion .btn-close').click();
-
                 form.reset();
                 setNuevoPrestador('');
                 setNuevaEspecialidad('');
-                setPacienteSeleccionado(null);
-                setBusquedaPaciente('');
+                setPacienteSeleccionadoCrear(null);
+                setRecursosCrear([]);
+                toast.success("¡Prestación creada con éxito!");
             })
             .catch(error => {
                 alert("Hubo un error al crear la prestación. Revisá la consola.");
@@ -134,6 +161,17 @@ const Prestaciones = () => {
         if (!prestacionActual) return;
 
         const form = document.getElementById('formEditarPrestacion');
+        
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        if (!pacienteSeleccionadoEditar) {
+            alert("Por favor, seleccioná un paciente de la lista.");
+            return;
+        }
+
         const formData = new FormData(form);
         const datosForm = Object.fromEntries(formData.entries());
 
@@ -147,15 +185,18 @@ const Prestaciones = () => {
 
         const datosAEnviar = {
             ...datosForm,
-            detalles_extras: detallesActualizados
+            detalles_extras: detallesActualizados,
+            recurso: recursosEditar 
         };
 
         prestacionEdit(prestacionActual.id, datosAEnviar)
             .then(() => {
                 obtenerPrestaciones().then(res => setPrestaciones(res));
-
                 document.querySelector('#modalEditarPrestacion .btn-close').click();
                 setPrestacionActual(null);
+                setRecursosEditar([]);
+                setPacienteSeleccionadoEditar(null);
+                toast.success("¡Prestación actualizada con éxito!");
             })
             .catch(error => {
                 alert("Hubo un error al guardar los cambios.");
@@ -168,9 +209,9 @@ const Prestaciones = () => {
         eliminarPrestacion(prestacionActual.id)
             .then(() => {
                 obtenerPrestaciones().then(res => setPrestaciones(res));
-
                 document.querySelector('#modalEliminarPrestacion .btn-close').click();
                 setPrestacionActual(null);
+                toast.success("¡Prestación eliminada con éxito!");
             })
             .catch(error => {
                 alert("Hubo un error al eliminar la prestación. Revisá la consola.");
@@ -187,10 +228,8 @@ const Prestaciones = () => {
 
     const filtroFechas = (prestacion) => {
         const fechaPrestacion = prestacion.fecha_inicio;
-        
         const cumpleDesde = fechaDesde === "" || fechaPrestacion >= fechaDesde;
         const cumpleHasta = fechaHasta === "" || fechaPrestacion <= fechaHasta;
-        
         return cumpleDesde && cumpleHasta;
     }
 
@@ -219,6 +258,8 @@ const Prestaciones = () => {
 
     return (
         <div className="container-prestaciones mt-4">
+            <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
+            
             {/* <-- FILTRO PRESTADORES --> */}
             <ul className="nav nav-tabs ms-1 mb-4">
                 {prestadoresUnicos.map((prestador, index) => (
@@ -235,9 +276,7 @@ const Prestaciones = () => {
             {/* <-- TODOS LOS FILTROS --> */}
             <div className='container-fluid my-3 px-4 d-flex align-items-center justify-content-between gap-2'>
                 <div className='d-flex align-items-center gap-2'>
-
                     <div className='d-flex align-items-center gap-2'>
-                    {/* Buscador */}
                         <strong className="filtro-abm d-flex align-items-center shadow" style={{ fontSize: "14px"}}>
                             <i className="bi bi-search me-2"></i>
                             <input 
@@ -248,7 +287,6 @@ const Prestaciones = () => {
                                 onChange={(e) => setBusqueda(e.target.value)}
                             />
                         </strong>
-
                     </div> 
                 
                     <strong className="filtro-abm shadow">Fecha desde:&nbsp; 
@@ -309,7 +347,6 @@ const Prestaciones = () => {
                             <option value="Dialisis">Diálisis</option>
                         </select>
                     </strong>
-
                 </div>
 
                 <div className='btn boton-accion d-flex gap-1' data-bs-toggle="modal" data-bs-target="#modalCrearPrestacion">
@@ -337,9 +374,9 @@ const Prestaciones = () => {
                             <strong className='d-block'>Horario: <span className="fw-normal">{formatearHorario(p.horario)}</span></strong>
                         )}
                         <strong className='d-block'>Especialidad: <span className="text-danger">{p.especialidad}</span></strong>
-                        <strong className='d-block'>Recurso: <span className="text-danger">{p.recurso || "- -"}</span></strong>
-                        {p.detalles_extras?.movil && (
-                        <strong className='d-block'>Móvil asignado: <span className="fw-normal">{p.detalles_extras.movil}</span></strong>
+                        <strong className='d-block'>Recurso: <span className="text-danger">{mostrarNombresRecursos(p.recurso)}</span></strong>
+                        {p.especialidad === 'Traslado' && (
+                        <strong className='d-block'>Móvil asignado: <span className="fw-normal">{p.detalles_extras.movil ? p.detalles_extras.movil : '- -'}</span></strong>
                         )}
                         {p.detalles_extras?.turno && (
                         <strong className='d-block'>Turno: <span className="fw-normal">{p.detalles_extras.turno}</span></strong>
@@ -351,15 +388,15 @@ const Prestaciones = () => {
                     {/* <-- COLUMNA 2 --> */}
                     <div className='col-3 border-end d-flex flex-column justify-content-center'>
                         <strong className='d-block mb-2'>Paciente: <span className="text-danger">{p.paciente.nombre} {p.paciente.apellido}</span></strong>
-                        <strong className='d-block'>Fecha Nac: <span className="fw-normal">{formatearFecha(p.paciente.fecha_nacimiento)}</span></strong>
-                        <strong className='d-block'>Diagnóstico: <span className="fw-normal">{p.paciente.diagnostico}</span></strong>
-                        <strong className='d-block'>Dirección: <span className="fw-normal">{p.paciente.direccion}</span></strong>
-                        <strong className='d-block'>Localidad: <span className="fw-normal">{p.paciente.localidad}</span></strong>
+                        <strong className='d-block'>Fecha Nac: <span className="fw-normal">{p.paciente.fecha_nacimiento ? formatearFecha(p.paciente.fecha_nacimiento) : '- -'}</span></strong>
+                        <strong className='d-block'>Diagnóstico: <span className="fw-normal">{p.paciente.diagnostico ? p.paciente.diagnostico : '- -'}</span></strong>
+                        <strong className='d-block'>Dirección: <span className="fw-normal">{p.paciente.direccion ? p.paciente.direccion : '- -'}</span></strong>
+                        <strong className='d-block'>Localidad: <span className="fw-normal">{p.paciente.localidad ? p.paciente.localidad : '- -'}</span></strong>
                     </div>
                     {/* <-- COLUMNA 3 --> */}
                     <div className='col-2 border-end d-flex flex-column justify-content-center'>
                         <strong className='d-block'>Cantidad: <span className="fw-normal">{p.cantidad}</span></strong>
-                        <strong className='d-block'>Frecuencia: <span className="fw-normal">{p.frecuencia}</span></strong>
+                        <strong className='d-block'>Frecuencia: <span className="fw-normal">{p.frecuencia ? p.frecuencia : '- -'}</span></strong>
                         <strong className='d-block'>Valor: <span className="fw-normal">${formatearMoneda(p.valor)}</span></strong>
                         <strong className='d-block'>Total: <span className="fw-normal">${formatearMoneda(p.total)}</span></strong>
                         <strong className='d-block'>Deuda: 
@@ -382,7 +419,6 @@ const Prestaciones = () => {
                                     <strong className='d-block border-end'>Valor hs extra: <span className="fw-normal">${formatearMoneda(p.detalles_extras.valor_hs_extra)}</span></strong>
                                 </>
                             )}
-
                         </div>
                         {/* <-- COLUMNA 5 --> */}
                         <div className='col-6 mb-2'>
@@ -419,16 +455,14 @@ const Prestaciones = () => {
                     </div>
                 </li>
                 ))) : (
-                    
                     <li className= 'list-group-item text-center text-muted mx-3'> No hay resultados. </li>
-                    
                 )
             }
         </ul>
 
         {/* <-- MODAL CREAR PRESTACIÓN --> */}
             <div className="modal fade" id="modalCrearPrestacion" tabIndex="-1" aria-hidden="true">
-                <div className="modal-dialog modal-lg">
+                <div className="modal-dialog modal-lg modal-dialog-centered">
                     <div className="modal-content">
                         <div className="modal-header border-bottom-1 pb-3">
                             <h5 className="modal-title fs-5">Crear Nueva Prestación</h5>
@@ -438,10 +472,8 @@ const Prestaciones = () => {
                         <div className="modal-body pt-3">
                             <form className="row g-3" id="formCrearPrestacion">
 
-                                {/* --- DATOS PRINCIPALES --- */}
                                 <h6 className="fw-bold text-danger mb-0 mt-4 border-bottom pb-2">Datos Generales</h6>
                                         
-                                {/* Fila 1: Prestador, Especialidad, Paciente */}
                                 <div className="col-md-4">
                                     <label className="form-label fw-bold">Prestador <span className="text-danger">*</span></label>
                                     <select 
@@ -476,43 +508,50 @@ const Prestaciones = () => {
                                 </div>
                                         
                                 <div className="col-md-4">
-                                    <label className="form-label fw-bold">Paciente <span className="text-danger">*</span></label>
-                                    <div className="dropdown">
-                                        <button className="form-select text-start" data-bs-toggle="dropdown" type="button">
-                                            {pacienteSeleccionado ? `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellido}` : "Seleccionar Paciente..."}
-                                        </button>
-                                        <ul className="dropdown-menu w-100 p-2 shadow" style={{maxHeight: '250px', overflowY: 'auto'}}>
-                                            <input 
-                                                type="text" 
-                                                className="form-control mb-2" 
-                                                placeholder="Buscar paciente..." 
-                                                value={busquedaPaciente} 
-                                                onChange={(e) => setBusquedaPaciente(e.target.value)} 
-                                            />
-                                            {pacientesParaDropdown.length > 0 ? (
-                                                pacientesParaDropdown.map(p => (
-                                                    <li key={p.id}>
-                                                        <button 
-                                                            className="dropdown-item rounded" 
-                                                            type="button" 
-                                                            onClick={() => setPacienteSeleccionado(p)}
-                                                        >
-                                                            {p.nombre} {p.apellido}
-                                                        </button>
-                                                    </li>
-                                                ))
-                                            ) : (
-                                                <li className="text-muted text-center py-2">No se encontraron pacientes</li>
-                                            )}
-                                        </ul>
-                                        <input type="hidden" name="paciente_id" value={pacienteSeleccionado?.id || ''} required />
-                                    </div>
+                                    <SelectorPaciente 
+                                        pacientes={pacientes}
+                                        pacienteSeleccionado={pacienteSeleccionadoCrear}
+                                        setPacienteSeleccionado={setPacienteSeleccionadoCrear}
+                                    />
                                 </div>
                                         
-                                {/* Fila 2: Recurso, Fechas */}
-                                <div className="col-md-4">
-                                    <label className="form-label fw-bold">Recurso</label>
-                                    <input type="text" name="recurso" className="form-control" placeholder="Persona a cargo..." />
+                                {/* Selector Dropdown para Recursos en Creación */}
+                                <div className="col-md-4 position-relative" ref={crearDropdownRef}>
+                                    <label className="form-label fw-bold">Recursos</label>
+                                    <div 
+                                        className="form-control d-flex justify-content-between align-items-center bg-white" 
+                                        style={{ cursor: 'pointer', minHeight: '38px' }}
+                                        onClick={() => setAbiertoCrearRecursos(!abiertoCrearRecursos)}
+                                    >
+                                        <span className="text-muted" style={{ fontSize: '14px' }}>
+                                            {recursosCrear.length > 0 ? `${recursosCrear.length} seleccionado(s)` : 'Seleccionar recursos...'}
+                                        </span>
+                                        <i className={`bi bi-chevron-${abiertoCrearRecursos ? 'up' : 'down'}`}></i>
+                                    </div>
+                                    {abiertoCrearRecursos && (
+                                        <div className="position-absolute w-100 bg-white border rounded shadow p-2 mt-1" style={{ zIndex: 1050, maxHeight: '200px', overflowY: 'auto' }}>
+                                            {recursosGlobales.map(r => (
+                                                <div key={r.id} className="form-check">
+                                                    <input 
+                                                        className="form-check-input checkbox-rojo" 
+                                                        type="checkbox" 
+                                                        checked={recursosCrear.includes(r.id)}
+                                                        onChange={() => {
+                                                            if (recursosCrear.includes(r.id)) {
+                                                                setRecursosCrear(recursosCrear.filter(id => id !== r.id));
+                                                            } else {
+                                                                setRecursosCrear([...recursosCrear, r.id]);
+                                                            }
+                                                        }}
+                                                        id={`crear-rec-${r.id}`}
+                                                    />
+                                                    <label className="form-check-label ms-2" htmlFor={`crear-rec-${r.id}`} style={{ cursor: 'pointer' }}>
+                                                        {r.nombre} {r.apellido}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                         
                                 <div className="col-md-4">
@@ -525,29 +564,19 @@ const Prestaciones = () => {
                                     <input type="date" name="fecha_fin" className="form-control" />
                                 </div>
                                         
-                                        
-                                {/* Fila 3: Valores Monetarios y Cantidad */}
-                                <div className="col-md-4">
+                                <div className="col-md-6">
                                     <label className="form-label fw-bold">Cantidad</label>
                                     <input type="number" name="cantidad" className="form-control" />
                                 </div>
                                         
-                                <div className="col-md-4">
+                                <div className="col-md-6">
                                     <label className="form-label fw-bold">Valor (Unitario)</label>
                                     <div className="input-group">
                                         <span className="input-group-text">$</span>
                                         <input type="number" step="0.01" name="valor" className="form-control" />
                                     </div>
                                 </div>
-                                        
-                                <div className="col-md-4">
-                                    <label className="form-label fw-bold">Total</label>
-                                    <div className="input-group">
-                                        <span className="input-group-text">$</span>
-                                        <input type="number" step="0.01" name="total" className="form-control" />
-                                    </div>
-                                </div>
-                                {/* Fila 4: Horario, Estado, Deuda, Frecuencia */}
+
                                 <div className="col-md-3">
                                     <label className="form-label fw-bold">Frecuencia</label>
                                     <input type="text" name="frecuencia" className="form-control" placeholder="Ej: 3xsem" />
@@ -575,10 +604,8 @@ const Prestaciones = () => {
                                     </select>
                                 </div>
                                         
-
                                 <h6 className="fw-bold text-danger mb-0 mt-4 border-bottom pb-2" style={{color: 'var(--color-primario)'}}>Datos Particulares</h6>
 
-                                {/* Solo si la especialidad es Traslado */}
                                 {nuevaEspecialidad === 'Traslado' && (
                                     <>
                                         <div className="col-md-4">
@@ -598,7 +625,6 @@ const Prestaciones = () => {
                                     </>
                                 )}
 
-                                {/* Privado */}
                                 {nuevoPrestador === 'Privado' && (
                                     <div className="col-md-4">
                                         <label className="form-label fw-bold">Turno</label>
@@ -606,7 +632,6 @@ const Prestaciones = () => {
                                     </div>
                                 )}
 
-                                {/* Bariss Salud o Privado (Comparten Feriado) */}
                                 {(nuevoPrestador === 'Bariss Salud' || nuevoPrestador === 'Privado') && (
                                     <>
                                         <div className="col-md-3">
@@ -623,7 +648,6 @@ const Prestaciones = () => {
                                     </>
                                 )}
 
-                                {/* Solo Bariss Salud */}
                                 {nuevoPrestador === 'Bariss Salud' && (
                                     <>
                                         <div className="col-md-3">
@@ -668,7 +692,6 @@ const Prestaciones = () => {
                                     <label className="form-label fw-bold">Observaciones</label>
                                     <textarea className="form-control" rows="2" name="observaciones"></textarea>
                                 </div>
-                                        
                             </form>
                         </div>
                                         
@@ -682,7 +705,7 @@ const Prestaciones = () => {
 
             {/* <-- MODAL EDITAR PRESTACIÓN --> */}
             <div className="modal fade" id="modalEditarPrestacion" tabIndex="-1" aria-hidden="true">
-                <div className="modal-dialog modal-lg">
+                <div className="modal-dialog modal-lg modal-dialog-centered">
                     <div className="modal-content">
                         <div className="modal-header">
                             <h5 className="modal-title">Editar Prestación <span className="text-danger fs-5">#{prestacionActual?.id}</span></h5>
@@ -693,8 +716,7 @@ const Prestaciones = () => {
                             {prestacionActual && (
                                 <form className="row g-3" id="formEditarPrestacion" key={JSON.stringify(prestacionActual)}>
                                                             
-                                {/* --- FILA 1: Prestador y Especialidad --- */}
-                                <div className="col-md-6">
+                                <div className="col-md-4">
                                     <label className="form-label fw-bold">Prestador</label>
                                     <select 
                                         className="form-select" 
@@ -708,7 +730,7 @@ const Prestaciones = () => {
                                     </select>
                                 </div>
 
-                                <div className="col-md-6">
+                                <div className="col-md-4">
                                     <label className="form-label fw-bold">Especialidad</label>
                                     <select 
                                         className="form-select" 
@@ -721,8 +743,55 @@ const Prestaciones = () => {
                                     </select>
                                 </div>
 
-                                {/* --- FILA 2: Fechas --- */}
-                                <div className="col-md-6">
+                                <div className="col-md-4">
+                                    <SelectorPaciente 
+                                        pacientes={pacientes}
+                                        pacienteSeleccionado={pacienteSeleccionadoEditar}
+                                        setPacienteSeleccionado={setPacienteSeleccionadoEditar}
+                                    />
+                                </div>
+
+                                {/* Selector Dropdown para Recursos en Edición */}
+                                <div className="col-md-4 position-relative" ref={editarDropdownRef}>
+                                    <label className="form-label fw-bold">Recursos</label>
+                                    <div 
+                                        className="form-control d-flex justify-content-between align-items-center bg-white" 
+                                        style={{ cursor: 'pointer', minHeight: '38px' }}
+                                        onClick={() => setAbiertoEditarRecursos(!abiertoEditarRecursos)}
+                                    >
+                                        <span className="text-muted" style={{ fontSize: '14px' }}>
+                                            {recursosEditar.length > 0 ? `${recursosEditar.length} seleccionado(s)` : 'Seleccionar recursos...'}
+                                        </span>
+                                        <i className={`bi bi-chevron-${abiertoEditarRecursos ? 'up' : 'down'}`}></i>
+                                    </div>
+                                    {abiertoEditarRecursos && (
+                                        <div className="position-absolute w-100 bg-white border rounded shadow p-2 mt-1" style={{ zIndex: 1050, maxHeight: '200px', overflowY: 'auto' }}>
+                                            {recursosGlobales.map(r => (
+                                                <div key={r.id} className="form-check">
+                                                    <input 
+                                                        className="form-check-input checkbox-rojo" 
+                                                        type="checkbox" 
+                                                        checked={recursosEditar.map(Number).includes(Number(r.id))}
+                                                        onChange={() => {
+                                                            const idsNum = recursosEditar.map(Number);
+                                                            if (idsNum.includes(Number(r.id))) {
+                                                                setRecursosEditar(idsNum.filter(id => id !== Number(r.id)));
+                                                            } else {
+                                                                setRecursosEditar([...idsNum, Number(r.id)]);
+                                                            }
+                                                        }}
+                                                        id={`editar-rec-${r.id}`}
+                                                    />
+                                                    <label className="form-check-label ms-2" htmlFor={`editar-rec-${r.id}`} style={{ cursor: 'pointer' }}>
+                                                        {r.nombre} {r.apellido}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="col-md-4">
                                     <label className="form-label fw-bold">Fecha Inicio</label>
                                     <input 
                                         type="date" 
@@ -732,7 +801,7 @@ const Prestaciones = () => {
                                     />
                                 </div>
 
-                                <div className="col-md-6">
+                                <div className="col-md-4">
                                     <label className="form-label fw-bold">Fecha Fin</label>
                                     <input 
                                         type="date" 
@@ -742,8 +811,7 @@ const Prestaciones = () => {
                                     />
                                 </div>
 
-                                {/* --- FILA 3: Valores Monetarios y Cantidad --- */}
-                                <div className="col-md-4">
+                                <div className="col-md-6">
                                     <label className="form-label fw-bold">Cantidad</label>
                                     <input 
                                         type="number" 
@@ -753,7 +821,7 @@ const Prestaciones = () => {
                                     />
                                 </div>
 
-                                <div className="col-md-4">
+                                <div className="col-md-6">
                                     <label className="form-label fw-bold">Valor (Unitario)</label>
                                     <div className="input-group">
                                         <span className="input-group-text">$</span>
@@ -767,21 +835,6 @@ const Prestaciones = () => {
                                     </div>
                                 </div>
 
-                                <div className="col-md-4">
-                                    <label className="form-label fw-bold">Total</label>
-                                    <div className="input-group">
-                                        <span className="input-group-text">$</span>
-                                        <input 
-                                            type="number" 
-                                            step="0.01" 
-                                            name="total"
-                                            className="form-control" 
-                                            defaultValue={prestacionActual.total} 
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* --- FILA 4: Frecuencia, Horario, Estado, Deuda --- */}
                                 <div className="col-md-3">
                                     <label className="form-label fw-bold">Frecuencia</label>
                                     <input 
@@ -828,10 +881,11 @@ const Prestaciones = () => {
                                         <option value="false">Impaga</option>
                                     </select>
                                 </div>
+
                                 {prestacionActual.detalles_extras && Object.keys(prestacionActual.detalles_extras).length > 0 && (
                                     <>
                                         <hr className="my-4" />
-                                        <h6 className="fw-bold text-danger mt-0">Detalles Especificos</h6>
+                                        <h6 className="fw-bold text-danger mt-0">Detalles Específicos</h6>
                                         {Object.entries(prestacionActual.detalles_extras).map(([clave, valor]) => (
                                             <div className="col-md-4" key={clave}>
                                                 <label className="form-label text-capitalize fw-bold">
@@ -861,7 +915,6 @@ const Prestaciones = () => {
                                     </>
                                 )}
 
-                                {/* --- FILA FINAL: Observaciones --- */}
                                 <div className="col-12 mt-4">
                                     <label className="form-label fw-bold">Observaciones</label>
                                     <textarea 
@@ -871,7 +924,6 @@ const Prestaciones = () => {
                                         defaultValue={prestacionActual.observaciones}
                                     ></textarea>
                                 </div>
-                            
                             </form>
                             )}
                         </div>

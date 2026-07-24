@@ -41,3 +41,8 @@ export const obtenerURLCompleta = (urlArchivo) => {
     const rutaLimpia = urlArchivo.startsWith('/') ? urlArchivo : `/${urlArchivo}`;
     return `http://localhost:3000${rutaLimpia}`;
 };
+
+export const mostrarNombresRecursos = (recursosObj) => {
+    if (!recursosObj || recursosObj.length === 0) return "- -";
+    return recursosObj.map(r => r.nombre).join(' | ');
+};

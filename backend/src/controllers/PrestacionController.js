@@ -11,10 +11,13 @@ class PrestacionController {
                 SELECT 
                     pr.*, 
                     row_to_json(pa) AS paciente,
-                    pp.profesional AS recurso
+                    (
+                        SELECT COALESCE(json_agg(json_build_object('id', r.id, 'nombre', r.nombre || ' ' || r.apellido)), '[]')
+                        FROM recursos r
+                        WHERE r.id = ANY(COALESCE(pr.recurso, ARRAY[]::integer[]))
+                    ) AS recurso
                 FROM prestaciones pr
                 INNER JOIN pacientes pa ON pr.paciente_id = pa.id
-                LEFT JOIN prestaciones_profesionales pp ON pr.id = pp.prestacion_id
                 ORDER BY pr.id DESC
             `;
             
@@ -22,7 +25,7 @@ class PrestacionController {
             res.json(resultado.rows);
             
         } catch (error) {
-            console.error('Error al traer las prestaciones con JOIN completo:', error);
+            console.error('Error al traer las prestaciones:', error);
             res.status(500).json({ error: 'Hubo un problema al consultar la base de datos' });
         }
     };
@@ -36,7 +39,6 @@ class PrestacionController {
             frecuencia, 
             cantidad, 
             valor, 
-            total, 
             observaciones, 
             detalles_extras, 
             pagado, 
@@ -46,14 +48,28 @@ class PrestacionController {
             recurso 
         } = req.body;
 
+        const cantNum = cantidad ? parseFloat(cantidad) : 0;
+        const valNum = valor ? parseFloat(valor) : 0;
+        const totalCalculado = cantNum * valNum;
+
+        let recursoArray = [];
+        if (recurso) {
+            if (Array.isArray(recurso)) {
+                recursoArray = recurso.map(id => parseInt(id, 10)).filter(n => !isNaN(n));
+            } else {
+                const parsed = parseInt(recurso, 10);
+                if (!isNaN(parsed)) recursoArray = [parsed];
+            }
+        }
+
         try {
             const query = `
                 INSERT INTO prestaciones (
                     paciente_id, fecha_inicio, fecha_fin, especialidad, frecuencia, 
                     cantidad, valor, total, observaciones, detalles_extras, 
-                    pagado, prestador, horario, estado
+                    pagado, prestador, horario, estado, recurso
                 ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14, $15
                 ) RETURNING *;
             `;
 
@@ -63,29 +79,35 @@ class PrestacionController {
                 fecha_fin,
                 especialidad,
                 frecuencia,
-                cantidad ? parseInt(cantidad) : 0,
-                valor ? parseInt(valor) : 0,
-                total ? parseInt(total) : 0,
+                cantNum,
+                valNum,
+                totalCalculado, 
                 observaciones,
                 JSON.stringify(detalles_extras || {}), 
                 pagado === 'true' || pagado === true, 
                 prestador,
                 horario,
-                estado || 'Sin asignar'
+                estado || 'Sin asignar',
+                recursoArray
             ].map(limpiar);
+
+            valores[14] = recursoArray;
 
             const resultado = await this.pool.query(query, valores);
             const nuevaPrestacion = resultado.rows[0];
 
-            if (recurso && recurso.trim() !== '') {
-                const queryProfesional = `
-                    INSERT INTO prestaciones_profesionales (prestacion_id, profesional)
-                    VALUES ($1, $2)
-                `;
-                await this.pool.query(queryProfesional, [nuevaPrestacion.id, recurso]);
-                
-                nuevaPrestacion.recurso = recurso;
+            if (recursoArray.length > 0) {
+                const recursosQuery = `SELECT id, nombre || ' ' || apellido AS nombre FROM recursos WHERE id = ANY($1)`;
+                const recursosRes = await this.pool.query(recursosQuery, [recursoArray]);
+                nuevaPrestacion.recurso = recursosRes.rows;
+            } else {
+                nuevaPrestacion.recurso = [];
             }
+
+            // Consultar datos completos del paciente para devolverlos en la respuesta
+            const pacienteQuery = `SELECT * FROM pacientes WHERE id = $1`;
+            const pacienteRes = await this.pool.query(pacienteQuery, [paciente_id]);
+            nuevaPrestacion.paciente = pacienteRes.rows[0] || null;
 
             res.status(201).json({ 
                 mensaje: 'Prestación creada con éxito', 
@@ -102,58 +124,79 @@ class PrestacionController {
         const { id } = req.params;
         
         const {
+            paciente_id, // Añadido para capturar el cambio de paciente
             fecha_inicio, 
             fecha_fin, 
             especialidad, 
             frecuencia, 
             cantidad, 
             valor, 
-            total, 
             observaciones, 
             detalles_extras, 
             pagado, 
             prestador,
             horario,
-            estado
+            estado,
+            recurso 
         } = req.body;
+
+        const cantNum = cantidad ? parseFloat(cantidad) : 0;
+        const valNum = valor ? parseFloat(valor) : 0;
+        const totalCalculado = cantNum * valNum;
+
+        let recursoArray = [];
+        if (recurso) {
+            if (Array.isArray(recurso)) {
+                recursoArray = recurso.map(item => parseInt(typeof item === 'object' ? item.id : item, 10)).filter(n => !isNaN(n));
+            } else {
+                const parsed = parseInt(recurso, 10);
+                if (!isNaN(parsed)) recursoArray = [parsed];
+            }
+        }
 
         try {
             const query = `
                 UPDATE prestaciones 
                 SET 
-                    fecha_inicio = $1,
-                    fecha_fin = $2,
-                    especialidad = $3,
-                    frecuencia = $4,
-                    cantidad = $5,
-                    valor = $6,
-                    total = $7,
-                    observaciones = $8,
-                    detalles_extras = $9::jsonb,
-                    pagado = $10,
-                    prestador = $11,
-                    horario = $12,
-                    estado = $13
-                WHERE id = $14
+                    paciente_id = $1,
+                    fecha_inicio = $2,
+                    fecha_fin = $3,
+                    especialidad = $4,
+                    frecuencia = $5,
+                    cantidad = $6,
+                    valor = $7,
+                    total = $8,
+                    observaciones = $9,
+                    detalles_extras = $10::jsonb,
+                    pagado = $11,
+                    prestador = $12,
+                    horario = $13,
+                    estado = $14,
+                    recurso = $15
+                WHERE id = $16
                 RETURNING *;
             `;
 
             const valores = [
+                paciente_id,
                 fecha_inicio,
                 fecha_fin,
                 especialidad,
                 frecuencia,
-                cantidad,
-                valor,
-                total,
+                cantNum,
+                valNum,
+                totalCalculado, 
                 observaciones,
                 JSON.stringify(detalles_extras || {}), 
                 pagado === 'true' || pagado === true, 
                 prestador,
                 horario,
                 estado || 'Sin asignar',
+                recursoArray,
                 id
             ].map(limpiar);
+
+            valores[14] = recursoArray;
 
             const resultado = await this.pool.query(query, valores);
 
@@ -161,9 +204,25 @@ class PrestacionController {
                 return res.status(404).json({ error: 'Prestación no encontrada' });
             }
 
+            const prestacionActualizada = resultado.rows[0];
+            
+            // Asignar los objetos de recursos formateados
+            if (recursoArray.length > 0) {
+                const recursosQuery = `SELECT id, nombre || ' ' || apellido AS nombre FROM recursos WHERE id = ANY($1)`;
+                const recursosRes = await this.pool.query(recursosQuery, [recursoArray]);
+                prestacionActualizada.recurso = recursosRes.rows;
+            } else {
+                prestacionActualizada.recurso = [];
+            }
+
+            // Consultar datos completos del paciente actualizado
+            const pacienteQuery = `SELECT * FROM pacientes WHERE id = $1`;
+            const pacienteRes = await this.pool.query(pacienteQuery, [prestacionActualizada.paciente_id]);
+            prestacionActualizada.paciente = pacienteRes.rows[0] || null;
+
             res.json({ 
                 mensaje: 'Prestación actualizada con éxito', 
-                prestacion: resultado.rows[0] 
+                prestacion: prestacionActualizada 
             });
 
         } catch (error) {
